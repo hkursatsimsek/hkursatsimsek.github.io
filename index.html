@@ -43,6 +43,7 @@
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(255, 253, 248, 0.9);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid transparent;
             transition: border-color 0.3s;
         }
@@ -403,14 +404,21 @@
             opacity: 0;
             transform: translateY(30px);
             transition: opacity 0.8s ease, transform 0.8s ease;
+            -webkit-transition: opacity 0.8s ease, -webkit-transform 0.8s ease;
         }
         .fade-up.visible {
             opacity: 1;
             transform: translateY(0);
+            -webkit-transform: translateY(0);
+        }
+        /* Safari fallback: if JS doesn't run, show everything */
+        .no-js .fade-up {
+            opacity: 1;
+            transform: none;
         }
     </style>
 </head>
-<body>
+<body class="no-js">
 
 <nav id="navbar">
     <div class="logo">K<span>.</span> Şimşek</div>
@@ -757,28 +765,47 @@
 </footer>
 
 <script>
+    // Remove no-js class to enable animations
+    document.body.classList.remove('no-js');
+
     // Nav scroll effect
-    const nav = document.getElementById('navbar');
-    window.addEventListener('scroll', () => {
-        nav.classList.toggle('scrolled', window.scrollY > 50);
+    var nav = document.getElementById('navbar');
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 50) {
+            nav.classList.add('scrolled');
+        } else {
+            nav.classList.remove('scrolled');
+        }
     });
 
-    // Fade-up on scroll
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-            }
-        });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    // Fade-up on scroll with fallback
+    if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
-    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+        document.querySelectorAll('.fade-up').forEach(function(el) {
+            observer.observe(el);
+        });
+    } else {
+        // Fallback: show everything immediately
+        document.querySelectorAll('.fade-up').forEach(function(el) {
+            el.classList.add('visible');
+        });
+    }
 
     // Smooth scroll for nav links
-    document.querySelectorAll('nav a[href^="#"]').forEach(a => {
-        a.addEventListener('click', e => {
+    document.querySelectorAll('nav a[href^="#"]').forEach(function(a) {
+        a.addEventListener('click', function(e) {
             e.preventDefault();
-            document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            var target = document.querySelector(a.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+            }
         });
     });
 </script>
